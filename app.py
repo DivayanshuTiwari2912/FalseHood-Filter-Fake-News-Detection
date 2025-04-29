@@ -11,17 +11,77 @@ from utils.preprocessing import preprocess_text, split_data
 from utils.visualization import plot_performance_metrics, plot_confusion_matrix, plot_confidence_distribution
 
 # Handle imports - Provide fallbacks if some modules fail to import
+FULL_IMPORTS_AVAILABLE = True
+
+# Import models with error handling for each
 try:
     from models.deberta import DeBERTaModel
+except ImportError as e:
+    st.warning(f"Could not import DeBERTa model: {str(e)}")
+    # Create a dummy model class
+    class DeBERTaModel:
+        def __init__(self, **kwargs):
+            self.is_dummy = True
+        def train(self, *args, **kwargs):
+            return self
+        def predict(self, X):
+            return [0] * len(X), [0.5] * len(X)
+    FULL_IMPORTS_AVAILABLE = False
+
+try:
     from models.maml import MAMLModel
+except ImportError as e:
+    st.warning(f"Could not import MAML model: {str(e)}")
+    # Create a dummy model class
+    class MAMLModel:
+        def __init__(self, **kwargs):
+            self.is_dummy = True
+        def train(self, *args, **kwargs):
+            return self
+        def predict(self, X):
+            return [0] * len(X), [0.5] * len(X)
+    FULL_IMPORTS_AVAILABLE = False
+
+try:
     from models.contrastive import ContrastiveModel
+except ImportError as e:
+    st.warning(f"Could not import Contrastive model: {str(e)}")
+    # Create a dummy model class
+    class ContrastiveModel:
+        def __init__(self, **kwargs):
+            self.is_dummy = True
+        def train(self, *args, **kwargs):
+            return self
+        def predict(self, X):
+            return [0] * len(X), [0.5] * len(X)
+    FULL_IMPORTS_AVAILABLE = False
+
+try:
     from models.rl import RLModel
+except ImportError as e:
+    st.warning(f"Could not import RL model: {str(e)}")
+    # Create a dummy model class
+    class RLModel:
+        def __init__(self, **kwargs):
+            self.is_dummy = True
+        def train(self, *args, **kwargs):
+            return self
+        def predict(self, X):
+            return [0] * len(X), [0.5] * len(X)
+    FULL_IMPORTS_AVAILABLE = False
+
+try:
     from models.trainer import train_model
     from models.evaluator import evaluate_model
-    FULL_IMPORTS_AVAILABLE = True
 except ImportError as e:
-    st.error(f"Error importing models: {str(e)}")
-    st.warning("Running with limited functionality due to missing dependencies.")
+    st.warning(f"Could not import training utilities: {str(e)}")
+    # Create dummy utility functions
+    def train_model(model, X_train, y_train, **kwargs):
+        return model.train(X_train, y_train)
+    
+    def evaluate_model(model, X_test, y_test):
+        preds, _ = model.predict(X_test)
+        return {"accuracy": 0.5, "precision": 0.5, "recall": 0.5, "f1": 0.5}
     FULL_IMPORTS_AVAILABLE = False
 
 # Set page configuration
