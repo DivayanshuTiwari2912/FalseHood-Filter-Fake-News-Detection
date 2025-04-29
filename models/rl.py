@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import deque
 import random
+import pandas as pd
 
 # Try to import torch, but provide fallbacks if not available
 try:

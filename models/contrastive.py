@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
+import pandas as pd
 
 # Try to import torch, but provide fallbacks if not available
 try:
@@ -290,36 +291,63 @@ class ContrastiveModel:
         Returns:
             tuple: (predictions, confidences)
         """
-        # Transform input data
-        X_vec = self.vectorizer.transform(X).toarray()
-        
         predictions = []
         confidences = []
         
-        for i in range(X_vec.shape[0]):
-            # Normalize vector
-            vec = X_vec[i]
-            norm = np.linalg.norm(vec)
-            if norm > 0:
-                vec = vec / norm
+        # Ensure X is iterable and contains valid text
+        if not isinstance(X, (list, tuple, np.ndarray)):
+            X = [str(X) if X is not None else ""]
+        
+        # Convert all inputs to strings, handling possible NaN values
+        safe_X = []
+        for x in X:
+            try:
+                if pd.isna(x):
+                    safe_X.append("")
+                else:
+                    safe_X.append(str(x))
+            except Exception as e:
+                print(f"Error converting input to string: {str(e)}")
+                safe_X.append("")
+                
+        try:
+            # Transform input data
+            X_vec = self.vectorizer.transform(safe_X).toarray()
             
-            # Calculate similarities to each class centroid
-            similarities = {}
-            for cls, centroid in self.class_centroids.items():
-                similarities[cls] = np.dot(vec, centroid)
-            
-            # Get prediction and confidence
-            if similarities[1] > similarities[0]:
-                pred = 1
-                conf = 0.5 + (similarities[1] - similarities[0]) / 2
-            else:
-                pred = 0
-                conf = 0.5 + (similarities[0] - similarities[1]) / 2
-            
-            # Clip confidence to [0, 1]
-            conf = max(0, min(conf, 1))
-            
-            predictions.append(pred)
-            confidences.append(conf)
+            for i in range(X_vec.shape[0]):
+                try:
+                    # Normalize vector
+                    vec = X_vec[i]
+                    norm = np.linalg.norm(vec)
+                    if norm > 0:
+                        vec = vec / norm
+                    
+                    # Calculate similarities to each class centroid
+                    similarities = {}
+                    for cls, centroid in self.class_centroids.items():
+                        similarities[cls] = float(np.dot(vec, centroid))
+                    
+                    # Get prediction and confidence
+                    if similarities[1] > similarities[0]:
+                        pred = 1
+                        conf = 0.5 + (similarities[1] - similarities[0]) / 2
+                    else:
+                        pred = 0
+                        conf = 0.5 + (similarities[0] - similarities[1]) / 2
+                    
+                    # Clip confidence to [0, 1]
+                    conf = max(0, min(conf, 1))
+                    
+                    predictions.append(pred)
+                    confidences.append(conf)
+                except Exception as e:
+                    print(f"Error processing vector at index {i}: {str(e)}")
+                    # Default to fake news with medium confidence
+                    predictions.append(0)
+                    confidences.append(0.5)
+        except Exception as e:
+            print(f"Error transforming input data: {str(e)}")
+            # Return defaults if transformation fails
+            return np.array([0] * len(safe_X)), np.array([0.5] * len(safe_X))
         
         return np.array(predictions), np.array(confidences)

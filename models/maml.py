@@ -300,34 +300,57 @@ class MAMLModel:
         predictions = []
         confidences = []
         
-        # Transform input data
-        X_vec = self.vectorizer.transform(X)
-        feature_names = self.vectorizer.get_feature_names_out()
+        # Ensure X is iterable and contains valid text
+        if not isinstance(X, (list, tuple, np.ndarray)):
+            X = [str(X) if X is not None else ""]
         
-        for i in range(X_vec.shape[0]):
-            # Get non-zero features
-            row = X_vec[i].toarray()[0]
-            score = 0
-            
-            # Calculate score based on word weights
-            for idx, value in enumerate(row):
-                if value > 0:
-                    word = feature_names[idx]
-                    if word in self.word_weights:
-                        score += self.word_weights[word] * value
-            
-            # Convert score to probability with sigmoid function
-            prob_real = 1 / (1 + np.exp(-score))
-            
-            # Determine prediction and confidence
-            if prob_real >= 0.5:
-                pred = 1
-                conf = prob_real
-            else:
-                pred = 0
-                conf = 1 - prob_real
-            
-            predictions.append(pred)
-            confidences.append(conf)
+        # Convert all inputs to strings, handling possible NaN values
+        safe_X = []
+        for x in X:
+            try:
+                if pd.isna(x):
+                    safe_X.append("")
+                else:
+                    safe_X.append(str(x))
+            except Exception as e:
+                print(f"Error converting input to string: {str(e)}")
+                safe_X.append("")
+        
+        # Process each text and make predictions
+        for text in safe_X:
+            try:
+                # Transform a single text
+                features = self.vectorizer.transform([text])
+                feature_names = self.vectorizer.get_feature_names_out()
+                
+                # Extract non-zero features
+                row = features.toarray()[0]
+                score = 0
+                
+                # Calculate score based on word weights
+                for idx, value in enumerate(row):
+                    if value > 0:
+                        word = feature_names[idx]
+                        if word in self.word_weights:
+                            score += self.word_weights[word] * value
+                
+                # Convert score to probability with sigmoid function
+                prob_real = float(1 / (1 + np.exp(-score)))
+                
+                # Determine prediction and confidence
+                if prob_real >= 0.5:
+                    pred = 1
+                    conf = prob_real
+                else:
+                    pred = 0
+                    conf = 1 - prob_real
+                
+                predictions.append(pred)
+                confidences.append(conf)
+            except Exception as e:
+                print(f"Error processing text for prediction: {str(e)}")
+                # Default to fake news with medium confidence
+                predictions.append(0)
+                confidences.append(0.5)
         
         return np.array(predictions), np.array(confidences)
