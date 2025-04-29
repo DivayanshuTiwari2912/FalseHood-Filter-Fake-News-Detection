@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
+import pandas as pd
 
 # Try to import transformers and torch, but provide fallbacks if not available
 try:
@@ -230,28 +231,43 @@ class DeBERTaModel:
         predictions = []
         confidences = []
         
+        # Ensure X is iterable and contains valid text
+        if not isinstance(X, (list, tuple, np.ndarray)):
+            X = [str(X) if X is not None else ""]
+        
         for text in X:
-            words = text.lower().split()
-            
-            # Calculate score based on word weights
-            score = 0
-            for word in words:
-                if word in self.word_weights:
-                    score += self.word_weights[word]
-            
-            # Convert score to probability with sigmoid function
-            prob_real = 1 / (1 + np.exp(-score))
-            
-            # Determine prediction and confidence
-            if prob_real >= 0.5:
-                pred = 1
-                conf = prob_real
-            else:
-                pred = 0
-                conf = 1 - prob_real
-            
-            predictions.append(pred)
-            confidences.append(conf)
+            try:
+                # Handle non-string or NaN inputs
+                if not isinstance(text, str) or pd.isna(text):
+                    text = str(text) if not pd.isna(text) else ""
+                
+                # Process text
+                words = text.lower().split()
+                
+                # Calculate score based on word weights
+                score = 0
+                for word in words:
+                    if word in self.word_weights:
+                        score += self.word_weights[word]
+                
+                # Convert score to probability with sigmoid function
+                prob_real = float(1 / (1 + np.exp(-score)))
+                
+                # Determine prediction and confidence
+                if prob_real >= 0.5:
+                    pred = 1
+                    conf = prob_real
+                else:
+                    pred = 0
+                    conf = 1 - prob_real
+                
+                predictions.append(pred)
+                confidences.append(conf)
+            except Exception as e:
+                print(f"Error processing text for prediction: {e}")
+                # Default to fake news with low confidence
+                predictions.append(0)
+                confidences.append(0.5)
         
         return np.array(predictions), np.array(confidences)
     
