@@ -1,43 +1,59 @@
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import deque
 import random
 
-class DQNNetwork(nn.Module):
-    """Deep Q-Network for fake news detection."""
-    
-    def __init__(self, input_dim, hidden_dim=128, n_actions=2):
-        super(DQNNetwork, self).__init__()
-        self.network = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, n_actions)
-        )
-        
-    def forward(self, x):
-        return self.network(x)
+# Try to import torch, but provide fallbacks if not available
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from torch.utils.data import DataLoader, TensorDataset
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    print("Warning: PyTorch not available. Using simplified implementation for RL model.")
 
-class PolicyNetwork(nn.Module):
-    """Policy network for policy gradient methods."""
-    
-    def __init__(self, input_dim, hidden_dim=128, n_actions=2):
-        super(PolicyNetwork, self).__init__()
-        self.network = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, n_actions)
-        )
+# Define PyTorch modules only if torch is available
+if TORCH_AVAILABLE:
+    class DQNNetwork(nn.Module):
+        """Deep Q-Network for fake news detection."""
         
-    def forward(self, x):
-        return F.softmax(self.network(x), dim=1)
+        def __init__(self, input_dim, hidden_dim=128, n_actions=2):
+            super(DQNNetwork, self).__init__()
+            self.network = nn.Sequential(
+                nn.Linear(input_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, n_actions)
+            )
+            
+        def forward(self, x):
+            return self.network(x)
+
+    class PolicyNetwork(nn.Module):
+        """Policy network for policy gradient methods."""
+        
+        def __init__(self, input_dim, hidden_dim=128, n_actions=2):
+            super(PolicyNetwork, self).__init__()
+            self.network = nn.Sequential(
+                nn.Linear(input_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, n_actions)
+            )
+            
+        def forward(self, x):
+            return F.softmax(self.network(x), dim=1)
+else:
+    # Dummy classes when torch is not available
+    class DQNNetwork:
+        pass
+        
+    class PolicyNetwork:
+        pass
 
 class RLModel:
     """
@@ -58,12 +74,14 @@ class RLModel:
         self.max_features = max_features
         self.hidden_dim = hidden_dim
         self.method = method
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # Initialize vectorizer
         self.vectorizer = TfidfVectorizer(max_features=max_features)
         
-        try:
+        # Check if torch is available
+        if TORCH_AVAILABLE:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            
             # Models will be initialized during training when input dimension is known
             self.dqn = None
             self.policy_net = None
@@ -76,10 +94,8 @@ class RLModel:
             
             # Flag for simplified implementation
             self.is_simplified = False
-            
-        except Exception as e:
-            print(f"Warning: Error initializing RL model: {str(e)}")
-            print("Using a simplified implementation instead")
+        else:
+            # Use simplified implementation
             self.is_simplified = True
             self.feature_weights = None
     

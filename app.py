@@ -9,12 +9,20 @@ from io import StringIO
 # Import custom modules
 from utils.preprocessing import preprocess_text, split_data
 from utils.visualization import plot_performance_metrics, plot_confusion_matrix, plot_confidence_distribution
-from models.deberta import DeBERTaModel
-from models.maml import MAMLModel
-from models.contrastive import ContrastiveModel
-from models.rl import RLModel
-from models.trainer import train_model
-from models.evaluator import evaluate_model
+
+# Handle imports - Provide fallbacks if some modules fail to import
+try:
+    from models.deberta import DeBERTaModel
+    from models.maml import MAMLModel
+    from models.contrastive import ContrastiveModel
+    from models.rl import RLModel
+    from models.trainer import train_model
+    from models.evaluator import evaluate_model
+    FULL_IMPORTS_AVAILABLE = True
+except ImportError as e:
+    st.error(f"Error importing models: {str(e)}")
+    st.warning("Running with limited functionality due to missing dependencies.")
+    FULL_IMPORTS_AVAILABLE = False
 
 # Set page configuration
 st.set_page_config(

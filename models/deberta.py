@@ -1,8 +1,15 @@
 import numpy as np
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-import torch
-from torch.utils.data import DataLoader, TensorDataset
-import torch.nn.functional as F
+
+# Try to import transformers and torch, but provide fallbacks if not available
+try:
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+    import torch
+    from torch.utils.data import DataLoader, TensorDataset
+    import torch.nn.functional as F
+    TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    TRANSFORMERS_AVAILABLE = False
+    print("Warning: transformers or torch packages not available. Using simplified implementation.")
 
 class DeBERTaModel:
     """

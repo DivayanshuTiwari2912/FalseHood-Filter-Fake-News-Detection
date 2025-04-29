@@ -1,33 +1,49 @@
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-class ContrastiveEncoder(nn.Module):
-    """Encoder model for contrastive learning."""
-    
-    def __init__(self, input_dim, embedding_dim=128):
-        super(ContrastiveEncoder, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 256),
-            nn.ReLU(),
-            nn.Linear(256, embedding_dim)
-        )
-        
-    def forward(self, x):
-        return F.normalize(self.encoder(x), dim=1)  # L2 normalize
+# Try to import torch, but provide fallbacks if not available
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from torch.utils.data import DataLoader, TensorDataset
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    print("Warning: PyTorch not available. Using simplified implementation for Contrastive Learning.")
 
-class ContrastiveClassifier(nn.Module):
-    """Classifier that uses embeddings from the contrastive encoder."""
-    
-    def __init__(self, embedding_dim, n_classes=2):
-        super(ContrastiveClassifier, self).__init__()
-        self.classifier = nn.Linear(embedding_dim, n_classes)
+# Define PyTorch modules only if torch is available
+if TORCH_AVAILABLE:
+    class ContrastiveEncoder(nn.Module):
+        """Encoder model for contrastive learning."""
         
-    def forward(self, x):
-        return self.classifier(x)
+        def __init__(self, input_dim, embedding_dim=128):
+            super(ContrastiveEncoder, self).__init__()
+            self.encoder = nn.Sequential(
+                nn.Linear(input_dim, 256),
+                nn.ReLU(),
+                nn.Linear(256, embedding_dim)
+            )
+            
+        def forward(self, x):
+            return F.normalize(self.encoder(x), dim=1)  # L2 normalize
+
+    class ContrastiveClassifier(nn.Module):
+        """Classifier that uses embeddings from the contrastive encoder."""
+        
+        def __init__(self, embedding_dim, n_classes=2):
+            super(ContrastiveClassifier, self).__init__()
+            self.classifier = nn.Linear(embedding_dim, n_classes)
+            
+        def forward(self, x):
+            return self.classifier(x)
+else:
+    # Dummy classes when torch is not available
+    class ContrastiveEncoder:
+        pass
+        
+    class ContrastiveClassifier:
+        pass
 
 class ContrastiveModel:
     """
@@ -49,22 +65,18 @@ class ContrastiveModel:
         self.max_features = max_features
         self.embedding_dim = embedding_dim
         self.temperature = temperature
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # Initialize vectorizer
         self.vectorizer = TfidfVectorizer(max_features=max_features)
         
-        try:
-            # Models will be initialized during training when input dimension is known
+        # Check if torch is available
+        if TORCH_AVAILABLE:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             self.encoder = None
             self.classifier = None
-            
-            # Flag for simplified implementation
             self.is_simplified = False
-            
-        except Exception as e:
-            print(f"Warning: Error initializing Contrastive Learning model: {str(e)}")
-            print("Using a simplified implementation instead")
+        else:
+            # Use simplified implementation
             self.is_simplified = True
             self.word_vectors = {}
             self.class_centroids = {}

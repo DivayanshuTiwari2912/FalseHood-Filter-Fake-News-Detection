@@ -1,37 +1,53 @@
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-class TaskEncoder(nn.Module):
-    """Simple encoder for text classification tasks in MAML."""
-    
-    def __init__(self, input_dim, hidden_dim=64):
-        super(TaskEncoder, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim // 2)
-        )
-        
-    def forward(self, x):
-        return self.encoder(x)
+# Try to import torch, but provide fallbacks if not available
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from torch.utils.data import DataLoader, TensorDataset
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    print("Warning: PyTorch not available. Using simplified implementation for MAML.")
 
-class TaskClassifier(nn.Module):
-    """Task-specific classifier for MAML."""
-    
-    def __init__(self, input_dim, n_classes=2):
-        super(TaskClassifier, self).__init__()
-        self.classifier = nn.Sequential(
-            nn.Linear(input_dim, input_dim // 2),
-            nn.ReLU(),
-            nn.Linear(input_dim // 2, n_classes)
-        )
+# Define PyTorch modules only if torch is available
+if TORCH_AVAILABLE:
+    class TaskEncoder(nn.Module):
+        """Simple encoder for text classification tasks in MAML."""
         
-    def forward(self, x):
-        return self.classifier(x)
+        def __init__(self, input_dim, hidden_dim=64):
+            super(TaskEncoder, self).__init__()
+            self.encoder = nn.Sequential(
+                nn.Linear(input_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, hidden_dim // 2)
+            )
+            
+        def forward(self, x):
+            return self.encoder(x)
+
+    class TaskClassifier(nn.Module):
+        """Task-specific classifier for MAML."""
+        
+        def __init__(self, input_dim, n_classes=2):
+            super(TaskClassifier, self).__init__()
+            self.classifier = nn.Sequential(
+                nn.Linear(input_dim, input_dim // 2),
+                nn.ReLU(),
+                nn.Linear(input_dim // 2, n_classes)
+            )
+            
+        def forward(self, x):
+            return self.classifier(x)
+else:
+    # Dummy classes when torch is not available
+    class TaskEncoder:
+        pass
+        
+    class TaskClassifier:
+        pass
 
 class MAMLModel:
     """
@@ -50,28 +66,25 @@ class MAMLModel:
         """
         self.max_features = max_features
         self.hidden_dim = hidden_dim
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # Initialize vectorizer
         self.vectorizer = TfidfVectorizer(max_features=max_features)
         
-        # Meta-parameters
-        self.meta_lr = 0.01
-        self.task_lr = 0.1
-        self.meta_batch_size = 5
-        
-        # Initialize models
-        try:
-            # Will be initialized during training when feature size is known
+        # Check if torch is available
+        if TORCH_AVAILABLE:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            
+            # Meta-parameters
+            self.meta_lr = 0.01
+            self.task_lr = 0.1
+            self.meta_batch_size = 5
+            
+            # Initialize models
             self.encoder = None
             self.classifier = None
-            
-            # Flag for simplified implementation
             self.is_simplified = False
-            
-        except Exception as e:
-            print(f"Warning: Error initializing MAML model: {str(e)}")
-            print("Using a simplified implementation instead")
+        else:
+            # Use simplified implementation
             self.is_simplified = True
             self.word_weights = {}
     
