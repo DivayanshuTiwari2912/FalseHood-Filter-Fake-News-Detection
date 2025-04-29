@@ -10,6 +10,7 @@ dependencies = [
     "pandas>=2.2.3",
     "scikit-learn>=1.6.1",
     "streamlit>=1.44.1",
+    "trafilatura>=2.0.0",
 ]
 
 [[tool.uv.index]]
