@@ -7,13 +7,22 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
 # Download NLTK data
+# Always download required resources to ensure they are available
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt')
+
+# Verify resources are available
 try:
     nltk.data.find('corpora/stopwords')
     nltk.data.find('corpora/wordnet')
-except LookupError:
-    nltk.download('stopwords')
-    nltk.download('wordnet')
-    nltk.download('punkt')
+    nltk.data.find('tokenizers/punkt')
+except LookupError as e:
+    print(f"Error finding NLTK resources: {e}")
+    # Try downloading again with specific path
+    nltk.download('stopwords', download_dir='/home/runner/nltk_data')
+    nltk.download('wordnet', download_dir='/home/runner/nltk_data')
+    nltk.download('punkt', download_dir='/home/runner/nltk_data')
 
 # Initialize lemmatizer
 lemmatizer = WordNetLemmatizer()
@@ -33,22 +42,37 @@ def preprocess_text(text):
     if not isinstance(text, str):
         return ""
     
-    # Convert to lowercase
-    text = text.lower()
-    
-    # Remove special characters and numbers
-    text = re.sub(r'[^a-zA-Z\s]', '', text)
-    
-    # Tokenize
-    tokens = nltk.word_tokenize(text)
-    
-    # Remove stopwords and lemmatize
-    tokens = [lemmatizer.lemmatize(token) for token in tokens if token not in stop_words]
-    
-    # Join tokens back to text
-    processed_text = ' '.join(tokens)
-    
-    return processed_text
+    try:
+        # Convert to lowercase
+        text = text.lower()
+        
+        # Remove special characters and numbers
+        text = re.sub(r'[^a-zA-Z\s]', '', text)
+        
+        # Tokenize - Simple fallback if NLTK fails
+        try:
+            tokens = nltk.word_tokenize(text)
+        except Exception as e:
+            print(f"Error in NLTK word_tokenize: {e}")
+            # Simple fallback tokenization
+            tokens = text.split()
+        
+        # Remove stopwords and lemmatize
+        try:
+            tokens = [lemmatizer.lemmatize(token) for token in tokens if token not in stop_words]
+        except Exception as e:
+            print(f"Error in stopword removal or lemmatization: {e}")
+            # Simple fallback without lemmatization or stopword removal
+            pass
+        
+        # Join tokens back to text
+        processed_text = ' '.join(tokens)
+        
+        return processed_text
+    except Exception as e:
+        print(f"Error in text preprocessing: {e}")
+        # Return original text if all else fails
+        return text.lower() if isinstance(text, str) else ""
 
 def split_data(X, y, test_size=0.2, random_state=42):
     """
