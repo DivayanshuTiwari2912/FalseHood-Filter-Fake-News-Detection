@@ -232,11 +232,19 @@ elif page == "Upload & Train":
                     st.warning("Please select at least one model to train.")
                 else:
                     # Prepare data
-                    X = df[text_column].values
+                    # Ensure text data is processed properly
+                    X = df[text_column].astype(str).values
                     y = df[label_column].values
+                    
+                    # Add additional data validation
+                    if len(X) == 0:
+                        st.error("No data found in the text column.")
+                        st.stop()
                     
                     # Split data
                     X_train, X_test, y_train, y_test = split_data(X, y, test_size=test_size)
+                    
+                    st.write(f"Training data size: {len(X_train)} samples")
                     
                     # Display training progress
                     progress_bar = st.progress(0)
