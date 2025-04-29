@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Try to import transformers and torch, but provide fallbacks if not available
 try:
@@ -27,9 +28,11 @@ class DeBERTaModel:
         """
         self.model_name = model_name
         self.max_length = max_length
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-        try:
+        # Check if transformers and torch are available
+        if TRANSFORMERS_AVAILABLE:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            
             # Load tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(model_name)
             
@@ -39,17 +42,15 @@ class DeBERTaModel:
                 num_labels=2
             )
             
-            # Move model to device
-            self.model.to(self.device)
-            
-        except Exception as e:
-            # Fallback to a simple implementation for demo purposes
-            print(f"Warning: Error loading DeBERTa model: {str(e)}")
-            print("Using a simplified implementation instead")
-            self.tokenizer = None
-            self.model = None
+            # Flag for simplified implementation
+            self.is_simplified = False
+        else:
+            # Use simplified implementation with basic TF-IDF
             self.is_simplified = True
+            self.vectorizer = TfidfVectorizer(max_features=5000)
             self.word_weights = {}
+            
+            # No model to move in this case
     
     def train(self, X_train, y_train, epochs=3, batch_size=8):
         """
