@@ -318,29 +318,66 @@ class RLModel:
         # Check if using simplified implementation
         if self.is_simplified:
             return self._predict_simplified(X)
+            
+        # Ensure X is iterable and contains valid text
+        if not isinstance(X, (list, tuple, np.ndarray)):
+            X = [str(X) if X is not None else ""]
         
-        # Transform input data
-        X_vec = self.vectorizer.transform(X).toarray()
-        X_tensor = torch.FloatTensor(X_vec).to(self.device)
+        # Convert all inputs to strings, handling possible NaN values
+        safe_X = []
+        for x in X:
+            try:
+                if pd.isna(x):
+                    safe_X.append("")
+                else:
+                    safe_X.append(str(x))
+            except Exception as e:
+                print(f"Error converting input to string: {str(e)}")
+                safe_X.append("")
         
-        # Set models to evaluation mode
-        if self.method == 'dqn':
-            self.dqn.eval()
-            with torch.no_grad():
-                q_values = self.dqn(X_tensor)
-                preds = torch.argmax(q_values, dim=1).cpu().numpy()
-                
-                # Calculate confidence as normalized absolute difference between Q-values
-                q_diff = torch.abs(q_values[:, 1] - q_values[:, 0])
-                confs = (q_diff / (torch.max(q_diff) + 1e-10)).cpu().numpy()
-        else:  # policy_gradient
-            self.policy_net.eval()
-            with torch.no_grad():
-                action_probs = self.policy_net(X_tensor)
-                preds = torch.argmax(action_probs, dim=1).cpu().numpy()
-                confs = action_probs.max(dim=1)[0].cpu().numpy()
+        try:
+            # Transform input data
+            X_vec = self.vectorizer.transform(safe_X).toarray()
+            X_tensor = torch.FloatTensor(X_vec).to(self.device)
+            
+            # Set models to evaluation mode
+            if self.method == 'dqn':
+                if self.dqn is None:
+                    print("DQN model not initialized")
+                    return np.zeros(len(safe_X), dtype=int), np.full(len(safe_X), 0.5)
+                    
+                self.dqn.eval()
+                try:
+                    with torch.no_grad():
+                        q_values = self.dqn(X_tensor)
+                        preds = torch.argmax(q_values, dim=1).cpu().numpy()
+                        
+                        # Calculate confidence as normalized absolute difference between Q-values
+                        q_diff = torch.abs(q_values[:, 1] - q_values[:, 0])
+                        confs = (q_diff / (torch.max(q_diff) + 1e-10)).cpu().numpy()
+                except Exception as e:
+                    print(f"Error in DQN prediction: {str(e)}")
+                    return np.zeros(len(safe_X), dtype=int), np.full(len(safe_X), 0.5)
+            else:  # policy_gradient
+                if self.policy_net is None:
+                    print("Policy network not initialized")
+                    return np.zeros(len(safe_X), dtype=int), np.full(len(safe_X), 0.5)
+                    
+                self.policy_net.eval()
+                try:
+                    with torch.no_grad():
+                        action_probs = self.policy_net(X_tensor)
+                        preds = torch.argmax(action_probs, dim=1).cpu().numpy()
+                        confs = action_probs.max(dim=1)[0].cpu().numpy()
+                except Exception as e:
+                    print(f"Error in policy gradient prediction: {str(e)}")
+                    return np.zeros(len(safe_X), dtype=int), np.full(len(safe_X), 0.5)
+            
+            return preds, confs
         
-        return preds, confs
+        except Exception as e:
+            print(f"Error in prediction: {str(e)}")
+            return np.zeros(len(safe_X), dtype=int), np.full(len(safe_X), 0.5)
     
     def _predict_simplified(self, X):
         """
@@ -352,16 +389,45 @@ class RLModel:
         Returns:
             tuple: (predictions, confidences)
         """
-        # Transform input data
-        X_vec = self.vectorizer.transform(X).toarray()
+        # Ensure X is iterable and contains valid text
+        if not isinstance(X, (list, tuple, np.ndarray)):
+            X = [str(X) if X is not None else ""]
         
-        # Calculate scores
-        scores = X_vec.dot(self.feature_weights)
+        # Convert all inputs to strings, handling possible NaN values
+        safe_X = []
+        for x in X:
+            try:
+                if pd.isna(x):
+                    safe_X.append("")
+                else:
+                    safe_X.append(str(x))
+            except Exception as e:
+                print(f"Error converting input to string: {str(e)}")
+                safe_X.append("")
         
-        # Get predictions
-        predictions = (scores > 0).astype(int)
-        
-        # Calculate confidences
-        confidences = 1 / (1 + np.exp(-np.abs(scores)))
-        
-        return predictions, confidences
+        try:
+            # Transform input data
+            X_vec = self.vectorizer.transform(safe_X).toarray()
+            
+            # Check if feature weights are available
+            if self.feature_weights is None or len(self.feature_weights) != X_vec.shape[1]:
+                print("Feature weights not properly initialized or dimension mismatch")
+                return np.zeros(len(safe_X), dtype=int), np.full(len(safe_X), 0.5)
+            
+            # Calculate scores
+            scores = X_vec.dot(self.feature_weights)
+            
+            # Get predictions
+            predictions = (scores > 0).astype(int)
+            
+            # Calculate confidences with safeguards
+            # Use clipping to prevent overflow in exp
+            clipped_scores = np.clip(np.abs(scores), 0, 20)  # Prevent overflow in exp
+            confidences = 1 / (1 + np.exp(-clipped_scores))
+            
+            return predictions, confidences
+            
+        except Exception as e:
+            print(f"Error in simplified prediction: {str(e)}")
+            # Return default predictions in case of error
+            return np.zeros(len(safe_X), dtype=int), np.full(len(safe_X), 0.5)

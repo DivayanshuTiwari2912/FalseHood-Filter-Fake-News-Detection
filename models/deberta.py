@@ -234,6 +234,11 @@ class DeBERTaModel:
         # Ensure X is iterable and contains valid text
         if not isinstance(X, (list, tuple, np.ndarray)):
             X = [str(X) if X is not None else ""]
+            
+        # Verify word weights are initialized
+        if not hasattr(self, 'word_weights') or self.word_weights is None:
+            print("Model not properly trained - word weights not initialized")
+            return np.zeros(len(X), dtype=int), np.full(len(X), 0.5)
         
         for text in X:
             try:
@@ -250,6 +255,9 @@ class DeBERTaModel:
                     if word in self.word_weights:
                         score += self.word_weights[word]
                 
+                # Use clipping to prevent overflow in exp
+                score = np.clip(score, -20, 20)
+                
                 # Convert score to probability with sigmoid function
                 prob_real = float(1 / (1 + np.exp(-score)))
                 
@@ -261,15 +269,23 @@ class DeBERTaModel:
                     pred = 0
                     conf = 1 - prob_real
                 
+                # Ensure confidence is a valid float
+                conf = float(conf)
+                
                 predictions.append(pred)
                 confidences.append(conf)
             except Exception as e:
                 print(f"Error processing text for prediction: {e}")
-                # Default to fake news with low confidence
+                # Default to fake news with medium confidence
                 predictions.append(0)
                 confidences.append(0.5)
         
-        return np.array(predictions), np.array(confidences)
+        try:
+            return np.array(predictions), np.array(confidences)
+        except Exception as e:
+            print(f"Error converting predictions to numpy arrays: {e}")
+            # Fallback to lists if numpy conversion fails
+            return predictions, confidences
     
     def _tokenize_batch(self, texts):
         """
