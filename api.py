@@ -307,6 +307,71 @@ def scrape_website():
     except Exception as e:
         return jsonify({'error': f'Error scraping website: {str(e)}'}), 500
 
+@app.route('/api/model-comparison', methods=['GET'])
+def model_comparison():
+    """Get comparison data between traditional and advanced models."""
+    
+    # Comparison data between traditional and advanced models
+    comparison_data = {
+        'success': True,
+        'categories': ['Accuracy', 'Adaptability', 'Data Efficiency', 'Contextual Understanding', 'Handling Evolving Content'],
+        'traditional_scores': [70, 40, 30, 45, 35],  # Out of 100
+        'advanced_scores': [90, 85, 80, 95, 85],     # Out of 100
+        'traditional_models': ['Naive Bayes', 'SVM', 'Random Forests', 'Logistic Regression'],
+        'advanced_models': ['DeBERTa', 'MAML', 'Contrastive Learning', 'Reinforcement Learning'],
+        'detailed_metrics': {
+            'accuracy_complex': {
+                'traditional': '65%',
+                'advanced': '92%',
+                'description': 'Accuracy on complex and nuanced false information'
+            },
+            'training_time': {
+                'traditional': 'Faster',
+                'advanced': 'Slower but optimizable',
+                'description': 'Time required to train the models'
+            },
+            'samples_needed': {
+                'traditional': 'Large datasets required',
+                'advanced': 'Can work with smaller datasets',
+                'description': 'Amount of training data needed for good performance'
+            },
+            'adaptability': {
+                'traditional': 'Limited',
+                'advanced': 'High',
+                'description': 'Ability to adapt to new domains and types of false information'
+            },
+            'context_window': {
+                'traditional': 'Limited or none',
+                'advanced': 'Large context windows',
+                'description': 'Ability to understand broader context in text'
+            }
+        },
+        'advantages': [
+            {
+                'title': 'Contextual Understanding',
+                'description': 'Advanced models like DeBERTa understand the context and semantics of text, not just keywords or phrases. This allows them to detect subtle forms of false information that use factually correct statements in misleading ways.'
+            },
+            {
+                'title': 'Adaptability to New Types of False Information',
+                'description': 'MAML and Reinforcement Learning approaches can quickly adapt to new patterns of false information with minimal additional training, making them more effective against evolving tactics.'
+            },
+            {
+                'title': 'Data Efficiency',
+                'description': 'Advanced models require less training data to achieve high performance. Contrastive Learning and MAML are particularly effective with smaller datasets compared to traditional methods.'
+            },
+            {
+                'title': 'Handling Evolving Content',
+                'description': 'Reinforcement Learning models continuously improve their detection strategies, making them effective against evolving false information tactics.'
+            },
+            {
+                'title': 'Nuanced Classification',
+                'description': 'Advanced models provide more nuanced assessments of information credibility, going beyond simple binary classification to offer confidence scores and identify specific questionable elements.'
+            }
+        ]
+    }
+    
+    return jsonify(comparison_data)
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """API health check endpoint."""

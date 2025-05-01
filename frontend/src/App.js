@@ -165,7 +165,7 @@ function App() {
         
         <footer className="bg-light p-3 text-center">
           <div className="container">
-            <span className="text-muted">Fake News Detection App © {new Date().getFullYear()}</span>
+            <span className="text-muted">Falsehood Filter System © {new Date().getFullYear()}</span>
           </div>
         </footer>
       </div>
