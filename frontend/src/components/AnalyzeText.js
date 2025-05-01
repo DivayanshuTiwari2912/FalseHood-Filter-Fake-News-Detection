@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiService from '../services/api';
+import ScrapeContent from './ScrapeContent';
 
 const AnalyzeText = ({ trainedModels }) => {
   const [text, setText] = useState('');
@@ -9,6 +10,7 @@ const AnalyzeText = ({ trainedModels }) => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [availableModels, setAvailableModels] = useState([]);
+  const [activeTab, setActiveTab] = useState('manual');
   
   // Fetch available models on component mount
   useEffect(() => {
@@ -62,6 +64,11 @@ const AnalyzeText = ({ trainedModels }) => {
     }
   };
   
+  const handleScrapedContent = (content) => {
+    setText(content);
+    setActiveTab('manual');
+  };
+  
   const getConfidenceClass = (confidence) => {
     if (confidence >= 0.8) return 'text-success';
     if (confidence >= 0.5) return 'text-warning';
@@ -89,62 +96,87 @@ const AnalyzeText = ({ trainedModels }) => {
       
       <div className="card mb-4">
         <div className="card-body">
-          <h3 className="card-title">Enter Text to Analyze</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <label htmlFor="text-input" className="form-label">
-                News Article Text
-              </label>
-              <textarea
-                id="text-input"
-                className="form-control"
-                rows="6"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Paste news article text here..."
-              />
-            </div>
-            
-            <div className="mb-3">
-              <label htmlFor="model-select" className="form-label">
-                Select Model
-              </label>
-              <select
-                id="model-select"
-                className="form-select"
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
+          <ul className="nav nav-tabs mb-3">
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeTab === 'manual' ? 'active' : ''}`}
+                onClick={() => setActiveTab('manual')}
               >
-                <option value="">Select a model</option>
-                {trainedModels.map((model) => (
-                  <option key={model} value={model}>
-                    {availableModels[model] || model}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            {error && (
-              <div className="alert alert-danger" role="alert">
-                {error}
-              </div>
-            )}
-            
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isAnalyzing || !text.trim() || !selectedModel}
-            >
-              {isAnalyzing ? (
-                <>
-                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                  &nbsp;Analyzing...
-                </>
-              ) : (
-                'Analyze Text'
-              )}
-            </button>
-          </form>
+                Manual Input
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeTab === 'scrape' ? 'active' : ''}`}
+                onClick={() => setActiveTab('scrape')}
+              >
+                Web Scraper
+              </button>
+            </li>
+          </ul>
+          
+          {activeTab === 'manual' ? (
+            <>
+              <h3 className="card-title">Enter Text to Analyze</h3>
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="text-input" className="form-label">
+                    News Article Text
+                  </label>
+                  <textarea
+                    id="text-input"
+                    className="form-control"
+                    rows="6"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Paste news article text here..."
+                  />
+                </div>
+                
+                <div className="mb-3">
+                  <label htmlFor="model-select" className="form-label">
+                    Select Model
+                  </label>
+                  <select
+                    id="model-select"
+                    className="form-select"
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                  >
+                    <option value="">Select a model</option>
+                    {trainedModels.map((model) => (
+                      <option key={model} value={model}>
+                        {availableModels[model] || model}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {error && (
+                  <div className="alert alert-danger" role="alert">
+                    {error}
+                  </div>
+                )}
+                
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isAnalyzing || !text.trim() || !selectedModel}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      &nbsp;Analyzing...
+                    </>
+                  ) : (
+                    'Analyze Text'
+                  )}
+                </button>
+              </form>
+            </>
+          ) : (
+            <ScrapeContent onContentLoaded={handleScrapedContent} />
+          )}
         </div>
       </div>
       

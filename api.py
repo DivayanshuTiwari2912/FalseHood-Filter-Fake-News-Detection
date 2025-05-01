@@ -5,6 +5,17 @@ import numpy as np
 import pandas as pd
 import os
 import sys
+import trafilatura
+import nltk
+
+# Ensure NLTK resources are downloaded
+try:
+    nltk.download('stopwords', quiet=True)
+    nltk.download('wordnet', quiet=True)
+    nltk.download('punkt', quiet=True)
+    nltk.download('omw-1.4', quiet=True)  # Open Multilingual WordNet
+except Exception as e:
+    print(f"Warning: NLTK resource download issue - {str(e)}")
 
 # Import model classes from existing code
 from models.deberta import DeBERTaModel
@@ -265,6 +276,36 @@ def get_dataset():
         'success': True,
         'dataset': dataset
     })
+
+@app.route('/api/scrape', methods=['POST'])
+def scrape_website():
+    """Scrape content from a website using trafilatura."""
+    try:
+        # Get URL from request
+        data = request.json
+        url = data.get('url', '')
+        
+        if not url:
+            return jsonify({'error': 'No URL provided'}), 400
+            
+        # Scrape content
+        downloaded = trafilatura.fetch_url(url)
+        if downloaded is None:
+            return jsonify({'error': 'Failed to download content from URL'}), 400
+            
+        text = trafilatura.extract(downloaded)
+        if text is None or text.strip() == '':
+            return jsonify({'error': 'No content extracted from URL'}), 400
+            
+        return jsonify({
+            'success': True,
+            'url': url,
+            'text': text,
+            'length': len(text)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Error scraping website: {str(e)}'}), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():

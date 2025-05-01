@@ -56,6 +56,13 @@ const apiService = {
       model: modelName,
     });
   },
+  
+  // Web scraping
+  scrapeWebsite: (url) => {
+    return apiClient.post('/scrape', {
+      url: url,
+    });
+  },
 };
 
 export default apiService;
