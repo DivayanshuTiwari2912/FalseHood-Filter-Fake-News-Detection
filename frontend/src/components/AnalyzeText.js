@@ -6,6 +6,7 @@ import {
 } from 'react-share';
 import apiService from '../services/api';
 import ScrapeContent from './ScrapeContent';
+import TutorialButton from './TutorialButton';
 
 const AnalyzeText = ({ trainedModels }) => {
   const [text, setText] = useState('');
@@ -109,6 +110,7 @@ const AnalyzeText = ({ trainedModels }) => {
   return (
     <div className="analyze-text-container">
       <h2 className="page-title">Analyze Text</h2>
+      <TutorialButton pageName="analyze" />
       
       {trainedModels.length === 0 && (
         <div className="alert alert-warning">
