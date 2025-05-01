@@ -1,16 +1,21 @@
 import re
 import numpy as np
 import pandas as pd
+import os
 from sklearn.model_selection import train_test_split
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-# Download NLTK data
-# Always download required resources to ensure they are available
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('punkt')
+# Set the NLTK data path to our custom directory
+nltk_data_dir = os.path.join(os.path.expanduser('~'), 'nltk_data')
+nltk.data.path.insert(0, nltk_data_dir)
+
+# Download NLTK data to our custom directory
+nltk.download('stopwords', download_dir=nltk_data_dir, quiet=True)
+nltk.download('wordnet', download_dir=nltk_data_dir, quiet=True)
+nltk.download('punkt', download_dir=nltk_data_dir, quiet=True)
+nltk.download('omw-1.4', download_dir=nltk_data_dir, quiet=True)
 
 # Verify resources are available
 try:
@@ -19,10 +24,12 @@ try:
     nltk.data.find('tokenizers/punkt')
 except LookupError as e:
     print(f"Error finding NLTK resources: {e}")
-    # Try downloading again with specific path
-    nltk.download('stopwords', download_dir='/home/runner/nltk_data')
-    nltk.download('wordnet', download_dir='/home/runner/nltk_data')
-    nltk.download('punkt', download_dir='/home/runner/nltk_data')
+    # Try downloading again, this time not quietly
+    print("Attempting to download NLTK resources again...")
+    nltk.download('stopwords', download_dir=nltk_data_dir)
+    nltk.download('wordnet', download_dir=nltk_data_dir)
+    nltk.download('punkt', download_dir=nltk_data_dir)
+    nltk.download('omw-1.4', download_dir=nltk_data_dir)
 
 # Initialize lemmatizer
 lemmatizer = WordNetLemmatizer()
