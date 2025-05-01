@@ -611,7 +611,7 @@ elif page == "Results Dashboard":
                 history_data = [{
                     'Timestamp': item['timestamp'],
                     'Text': item['text'][:100] + '...' if len(item['text']) > 100 else item['text'],
-                    'Verdict': 'Real' if item['overall_verdict'] else 'Fake',
+                    'Verdict': 'Real' if item['overall_verdict'] else 'False',
                     'Confidence': f"{item['average_confidence']:.2f}"
                 } for item in st.session_state.analysis_history]
                 
@@ -625,7 +625,7 @@ elif page == "Results Dashboard":
                     selected_idx = st.selectbox(
                         "Select analysis to view details",
                         range(len(st.session_state.analysis_history)),
-                        format_func=lambda i: f"{st.session_state.analysis_history[i]['timestamp']} - {'Real' if st.session_state.analysis_history[i]['overall_verdict'] else 'Fake'}"
+                        format_func=lambda i: f"{st.session_state.analysis_history[i]['timestamp']} - {'Real' if st.session_state.analysis_history[i]['overall_verdict'] else 'False'}"
                     )
                     
                     analysis = st.session_state.analysis_history[selected_idx]
@@ -641,7 +641,7 @@ elif page == "Results Dashboard":
                     
                     st.write("**Individual Model Results:**")
                     for model, result in analysis['results'].items():
-                        st.write(f"**{model}:** {'Real' if result['prediction'] == 1 else 'Fake'} (Confidence: {result['confidence']:.2f})")
+                        st.write(f"**{model}:** {'Real' if result['prediction'] == 1 else 'False'} (Confidence: {result['confidence']:.2f})")
         
         # Export Results tab
         with tab3:
@@ -682,7 +682,7 @@ elif page == "Results Dashboard":
                     st.download_button(
                         label="Download Performance Data CSV",
                         data=csv,
-                        file_name="fake_news_model_performance.csv",
+                        file_name="falsehood_filter_model_performance.csv",
                         mime="text/csv"
                     )
             
@@ -696,13 +696,13 @@ elif page == "Results Dashboard":
                         row = {
                             'timestamp': analysis['timestamp'],
                             'text': analysis['text'],
-                            'verdict': 'Real' if analysis['overall_verdict'] else 'Fake',
+                            'verdict': 'Real' if analysis['overall_verdict'] else 'False',
                             'confidence': analysis['average_confidence']
                         }
                         
                         # Add individual model results
                         for model, result in analysis['results'].items():
-                            row[f"{model}_prediction"] = 'Real' if result['prediction'] == 1 else 'Fake'
+                            row[f"{model}_prediction"] = 'Real' if result['prediction'] == 1 else 'False'
                             row[f"{model}_confidence"] = result['confidence']
                         
                         history_data.append(row)
@@ -716,7 +716,7 @@ elif page == "Results Dashboard":
                     st.download_button(
                         label="Download Analysis History CSV",
                         data=csv,
-                        file_name="fake_news_analysis_history.csv",
+                        file_name="falsehood_filter_analysis_history.csv",
                         mime="text/csv"
                     )
 
@@ -735,7 +735,7 @@ elif page == "About":
     ## Comparing Our Advanced Algorithms to Traditional Methods
     
     Our application uses cutting-edge machine learning algorithms that offer significant 
-    advantages over traditional methods used in fake news detection. Below is a comparison 
+    advantages over traditional methods used in false information detection. Below is a comparison 
     of our advanced models against traditional approaches.
     """)
     
@@ -811,8 +811,8 @@ elif page == "About":
     models (like DeBERTa) understand deep contextual relationships between words and can capture subtle 
     linguistic cues that might indicate false information.
     
-    ### 2. Adaptability to New Types of Fake News
-    Fake news constantly evolves with new tactics. Our MAML approach allows the model to quickly adapt to 
+    ### 2. Adaptability to New Types of False Information
+    False information constantly evolves with new tactics. Our MAML approach allows the model to quickly adapt to 
     new patterns with minimal examples, whereas traditional algorithms require extensive retraining with 
     large datasets.
     
@@ -834,7 +834,7 @@ elif page == "About":
     st.subheader("Detailed Metric Comparison")
     
     comparison_data = {
-        'Metric': ['Accuracy on Complex News', 'Training Time', 'Samples Needed', 'Adaptability to New Domains', 'Context Window Size'],
+        'Metric': ['Accuracy on Complex Information', 'Training Time', 'Samples Needed', 'Adaptability to New Domains', 'Context Window Size'],
         'Traditional Methods': ['65-75%', 'Minutes', '10,000+', 'Poor', 'Limited (n-grams)'],
         'Advanced Algorithms': ['85-95%', 'Hours', '1,000-5,000', 'Excellent', 'Extensive (full context)']
     }
