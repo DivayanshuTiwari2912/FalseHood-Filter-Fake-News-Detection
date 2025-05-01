@@ -5,6 +5,7 @@ import About from './components/About';
 import AnalyzeText from './components/AnalyzeText';
 import UploadTrain from './components/UploadTrain';
 import ResultsDashboard from './components/ResultsDashboard';
+import CollaborationPanel from './components/CollaborationPanel';
 import apiService from './services/api';
 
 function App() {
@@ -63,7 +64,7 @@ function App() {
         <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
           <div className="container">
             <Link className="navbar-brand" to="/">
-              Fake News Detector
+              Falsehood Filter
             </Link>
             <button
               className="navbar-toggler"
@@ -168,6 +169,9 @@ function App() {
             <span className="text-muted">Falsehood Filter System © {new Date().getFullYear()}</span>
           </div>
         </footer>
+        
+        {/* Collaboration Panel */}
+        <CollaborationPanel />
       </div>
     </Router>
   );
