@@ -31,9 +31,30 @@ except LookupError as e:
     nltk.download('punkt', download_dir=nltk_data_dir)
     nltk.download('omw-1.4', download_dir=nltk_data_dir)
 
-# Initialize lemmatizer
-lemmatizer = WordNetLemmatizer()
-stop_words = set(stopwords.words('english'))
+# Initialize lemmatizer and stopwords with fallbacks
+try:
+    lemmatizer = WordNetLemmatizer()
+except Exception as e:
+    print(f"Error initializing WordNetLemmatizer: {e}")
+    # Create a simple fallback lemmatizer
+    class FallbackLemmatizer:
+        def lemmatize(self, token):
+            return token
+    lemmatizer = FallbackLemmatizer()
+
+try:
+    stop_words = set(stopwords.words('english'))
+except Exception as e:
+    print(f"Error getting stopwords: {e}")
+    # Common English stopwords as fallback
+    stop_words = {'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 
+                 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between',
+                 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to',
+                 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again',
+                 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how',
+                 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such',
+                 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's',
+                 't', 'can', 'will', 'just', 'don', 'should', 'now'}
 
 def preprocess_text(text):
     """

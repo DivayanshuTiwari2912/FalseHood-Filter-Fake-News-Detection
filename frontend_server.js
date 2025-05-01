@@ -1,21 +1,22 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const port = 3000;
+const port = 5000;
 
-// Serve static files from the React frontend app
+// Serve static files
 app.use(express.static(path.join(__dirname, 'frontend/build')));
 
-// Serve our api route that returns a simple message
+// Simple API check endpoint
 app.get('/api-check', (req, res) => {
   res.json({ message: 'React Server Running' });
 });
 
-// Handles any requests that don't match the ones above
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname + '/frontend/build/index.html'));
+// Root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/build/index.html'));
 });
 
+// Start the server
 app.listen(port, () => {
   console.log(`React frontend server is running on port ${port}`);
 });
