@@ -24,6 +24,10 @@ args = "Streamlit Server"
 task = "workflow.run"
 args = "Flask API"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "React Frontend"
+
 [[workflows.workflow]]
 name = "Streamlit Server"
 author = "agent"
@@ -40,6 +44,15 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python api.py"
+
+[[workflows.workflow]]
+name = "React Frontend"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node frontend_server.js"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
