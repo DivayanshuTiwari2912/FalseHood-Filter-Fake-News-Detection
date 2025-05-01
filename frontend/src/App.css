@@ -1,0 +1,106 @@
+.App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.navbar {
+  margin-bottom: 2rem;
+}
+
+.footer {
+  margin-top: auto;
+  padding: 1rem 0;
+}
+
+.container {
+  flex: 1;
+}
+
+/* Set active nav link highlighting */
+.navbar-nav .nav-link.active,
+.navbar-nav .nav-link:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+}
+
+/* Card styling for model selection */
+.card-model {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card-model:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-model.selected {
+  border-color: #0d6efd;
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Styles for prediction results */
+.prediction-result {
+  transition: all 0.3s;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.prediction-result.real {
+  background-color: rgba(40, 167, 69, 0.1);
+  border-left: 5px solid #28a745;
+}
+
+.prediction-result.fake {
+  background-color: rgba(220, 53, 69, 0.1);
+  border-left: 5px solid #dc3545;
+}
+
+/* Main content area */
+main {
+  padding: 2rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+}
+
+/* Loading spinner */
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+/* Page title styling */
+.page-title {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Animated transitions */
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}

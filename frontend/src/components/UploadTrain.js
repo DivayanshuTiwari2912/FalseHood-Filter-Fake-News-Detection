@@ -1,0 +1,368 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import apiService from '../services/api';
+
+const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResults }) => {
+  const [file, setFile] = useState(null);
+  const [textColumn, setTextColumn] = useState('text');
+  const [labelColumn, setLabelColumn] = useState('label');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  
+  const [selectedModel, setSelectedModel] = useState('deberta');
+  const [epochs, setEpochs] = useState(3);
+  const [batchSize, setBatchSize] = useState(32);
+  const [isTraining, setIsTraining] = useState(false);
+  const [trainingError, setTrainingError] = useState('');
+  const [trainingSuccess, setTrainingSuccess] = useState('');
+  
+  const [availableModels, setAvailableModels] = useState({});
+  const [evaluating, setEvaluating] = useState(false);
+  const [evaluationError, setEvaluationError] = useState('');
+  
+  const fileInputRef = useRef(null);
+  
+  // Fetch available models
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await apiService.getAvailableModels();
+        setAvailableModels(response.data.available_models);
+        setTrainedModels(response.data.trained_models || []);
+      } catch (err) {
+        console.error('Error fetching models:', err);
+      }
+    };
+    
+    fetchModels();
+  }, [setTrainedModels]);
+  
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      setUploadError('');
+    }
+  };
+  
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    
+    if (!file) {
+      setUploadError('Please select a file to upload.');
+      return;
+    }
+    
+    setIsUploading(true);
+    setUploadError('');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('text_col', textColumn);
+      formData.append('label_col', labelColumn);
+      
+      const response = await apiService.uploadDataset(formData);
+      setDataset(response.data.dataset);
+      setIsUploading(false);
+    } catch (err) {
+      setIsUploading(false);
+      console.error('Error uploading dataset:', err);
+      
+      if (err.response && err.response.data && err.response.data.error) {
+        setUploadError(err.response.data.error);
+      } else {
+        setUploadError('Error uploading dataset. Please try again.');
+      }
+    }
+  };
+  
+  const handleTrain = async (e) => {
+    e.preventDefault();
+    
+    if (!dataset) {
+      setTrainingError('Please upload a dataset first.');
+      return;
+    }
+    
+    setIsTraining(true);
+    setTrainingError('');
+    setTrainingSuccess('');
+    
+    try {
+      const response = await apiService.trainModel(selectedModel, epochs, batchSize);
+      
+      // Update trained models list
+      const modelsResponse = await apiService.getAvailableModels();
+      setTrainedModels(modelsResponse.data.trained_models || []);
+      
+      setIsTraining(false);
+      setTrainingSuccess(`Model ${selectedModel} trained successfully!`);
+      
+      // Automatically evaluate the model
+      handleEvaluate(selectedModel);
+    } catch (err) {
+      setIsTraining(false);
+      console.error('Error training model:', err);
+      
+      if (err.response && err.response.data && err.response.data.error) {
+        setTrainingError(err.response.data.error);
+      } else {
+        setTrainingError('Error training model. Please try again.');
+      }
+    }
+  };
+  
+  const handleEvaluate = async (modelName) => {
+    setEvaluating(true);
+    setEvaluationError('');
+    
+    try {
+      const response = await apiService.evaluateModel(modelName);
+      
+      // Update evaluation results in parent component
+      setEvaluationResults(prev => ({
+        ...prev,
+        [modelName]: response.data.metrics
+      }));
+      
+      setEvaluating(false);
+    } catch (err) {
+      setEvaluating(false);
+      console.error('Error evaluating model:', err);
+      
+      if (err.response && err.response.data && err.response.data.error) {
+        setEvaluationError(err.response.data.error);
+      } else {
+        setEvaluationError('Error evaluating model. Please try again.');
+      }
+    }
+  };
+  
+  return (
+    <div className="upload-train-container">
+      <h2 className="page-title">Upload Dataset & Train Models</h2>
+      
+      {/* Upload Dataset Section */}
+      <div className="card mb-4">
+        <div className="card-body">
+          <h3 className="card-title">1. Upload Dataset</h3>
+          <p className="card-text">
+            Upload a CSV file containing news articles with labels indicating whether each article is real or fake.
+          </p>
+          
+          <form onSubmit={handleUpload}>
+            <div className="mb-3">
+              <label htmlFor="file-upload" className="form-label">
+                Dataset File (CSV)
+              </label>
+              <input
+                type="file"
+                className="form-control"
+                id="file-upload"
+                accept=".csv"
+                onChange={handleFileChange}
+                ref={fileInputRef}
+              />
+              <div className="form-text">
+                Please ensure your CSV file has columns for text content and labels (0 for fake, 1 for real).
+              </div>
+            </div>
+            
+            <div className="row">
+              <div className="col-md-6">
+                <div className="mb-3">
+                  <label htmlFor="text-column" className="form-label">
+                    Text Column Name
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="text-column"
+                    value={textColumn}
+                    onChange={(e) => setTextColumn(e.target.value)}
+                    placeholder="Default: text"
+                  />
+                </div>
+              </div>
+              
+              <div className="col-md-6">
+                <div className="mb-3">
+                  <label htmlFor="label-column" className="form-label">
+                    Label Column Name
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="label-column"
+                    value={labelColumn}
+                    onChange={(e) => setLabelColumn(e.target.value)}
+                    placeholder="Default: label"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {uploadError && (
+              <div className="alert alert-danger" role="alert">
+                {uploadError}
+              </div>
+            )}
+            
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isUploading || !file}
+            >
+              {isUploading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  &nbsp;Uploading...
+                </>
+              ) : (
+                'Upload Dataset'
+              )}
+            </button>
+          </form>
+          
+          {dataset && (
+            <div className="alert alert-success mt-3">
+              <h5>Dataset Uploaded Successfully!</h5>
+              <p>
+                <strong>Filename:</strong> {dataset.filename}
+                <br />
+                <strong>Total Samples:</strong> {dataset.num_samples}
+                <br />
+                <strong>Training Samples:</strong> {dataset.num_train}
+                <br />
+                <strong>Testing Samples:</strong> {dataset.num_test}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Train Model Section */}
+      <div className="card">
+        <div className="card-body">
+          <h3 className="card-title">2. Train Model</h3>
+          <p className="card-text">
+            Select a model to train on the uploaded dataset.
+          </p>
+          
+          {!dataset && (
+            <div className="alert alert-warning">
+              Please upload a dataset first before training a model.
+            </div>
+          )}
+          
+          <form onSubmit={handleTrain}>
+            <div className="mb-3">
+              <label htmlFor="model-select" className="form-label">
+                Select Model
+              </label>
+              <select
+                id="model-select"
+                className="form-select"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+              >
+                {Object.entries(availableModels).map(([key, name]) => (
+                  <option key={key} value={key}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="row">
+              <div className="col-md-6">
+                <div className="mb-3">
+                  <label htmlFor="epochs" className="form-label">
+                    Training Epochs
+                  </label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    id="epochs"
+                    value={epochs}
+                    onChange={(e) => setEpochs(parseInt(e.target.value))}
+                    min="1"
+                    max="20"
+                  />
+                </div>
+              </div>
+              
+              <div className="col-md-6">
+                <div className="mb-3">
+                  <label htmlFor="batch-size" className="form-label">
+                    Batch Size
+                  </label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    id="batch-size"
+                    value={batchSize}
+                    onChange={(e) => setBatchSize(parseInt(e.target.value))}
+                    min="1"
+                    max="128"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {trainingError && (
+              <div className="alert alert-danger" role="alert">
+                {trainingError}
+              </div>
+            )}
+            
+            {trainingSuccess && (
+              <div className="alert alert-success" role="alert">
+                {trainingSuccess}
+              </div>
+            )}
+            
+            {evaluationError && (
+              <div className="alert alert-warning" role="alert">
+                {evaluationError}
+              </div>
+            )}
+            
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={isTraining || !dataset}
+            >
+              {isTraining ? (
+                <>
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  &nbsp;Training...
+                </>
+              ) : (
+                'Train Model'
+              )}
+            </button>
+            
+            {evaluating && (
+              <div className="mt-3">
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                &nbsp;Evaluating model performance...
+              </div>
+            )}
+          </form>
+          
+          <div className="mt-4">
+            <Link to="/analyze" className="btn btn-outline-primary">
+              Go to Analyze Text
+            </Link>
+            <Link to="/results" className="btn btn-outline-info ms-2">
+              View Results Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default UploadTrain;
