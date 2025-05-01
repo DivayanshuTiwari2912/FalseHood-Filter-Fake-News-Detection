@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import TutorialButton from './TutorialButton';
 
 const Home = () => {
   return (
     <div className="home-container">
+      <TutorialButton pageName="home" />
       <div className="jumbotron bg-light p-5 rounded">
         <h1 className="display-4">Falsehood Filter System</h1>
         <p className="lead">

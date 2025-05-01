@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, Radar } from 'react-chartjs-2';
 import { CSVLink } from 'react-csv';
+import TutorialButton from './TutorialButton';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -149,6 +150,7 @@ const ResultsDashboard = ({ dataset, trainedModels, evaluationResults }) => {
   return (
     <div className="results-dashboard-container">
       <h2 className="page-title">Results Dashboard</h2>
+      <TutorialButton pageName="results" />
       
       {trainedModels.length === 0 ? (
         <div className="alert alert-info">

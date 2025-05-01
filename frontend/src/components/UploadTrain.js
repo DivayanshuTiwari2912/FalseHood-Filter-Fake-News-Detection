@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { FiUpload, FiFile, FiCheckCircle } from 'react-icons/fi';
 import apiService from '../services/api';
+import TutorialButton from './TutorialButton';
 
 const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResults }) => {
   const [file, setFile] = useState(null);
@@ -162,6 +163,7 @@ const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResul
   return (
     <div className="upload-train-container">
       <h2 className="page-title">Upload Dataset & Train Models</h2>
+      <TutorialButton pageName="upload-train" />
       
       {/* Upload Dataset Section */}
       <div className="card mb-4">
