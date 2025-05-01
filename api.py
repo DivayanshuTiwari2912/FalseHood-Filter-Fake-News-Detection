@@ -231,18 +231,73 @@ def predict():
         # Make prediction
         predictions, confidences = model.predict([text])
         
+        # Determine emoji based on confidence
+        confidence = float(confidences[0])
+        is_authentic = int(predictions[0]) == 1
+        
+        # Select emoji based on confidence and prediction
+        emoji = get_credibility_emoji(confidence, is_authentic)
+        
         result = {
             'success': True,
             'model': model_name,
             'prediction': int(predictions[0]),
-            'confidence': float(confidences[0]),
-            'label': 'Authentic' if predictions[0] == 1 else 'False'
+            'confidence': confidence,
+            'label': 'Authentic' if is_authentic else 'False',
+            'emoji': emoji,
+            'emoji_description': get_emoji_description(confidence, is_authentic)
         }
         
         return jsonify(result)
         
     except Exception as e:
         return jsonify({'error': f'Error making prediction: {str(e)}'}), 500
+
+def get_credibility_emoji(confidence, is_authentic):
+    """Get an emoji representing the credibility of the content based on prediction and confidence."""
+    # For authentic content
+    if is_authentic:
+        if confidence >= 0.9:
+            return "✅"  # Very high confidence authentic
+        elif confidence >= 0.75:
+            return "👍"  # High confidence authentic
+        elif confidence >= 0.6:
+            return "🤔"  # Moderate confidence authentic
+        else:
+            return "⚠️"  # Low confidence authentic
+    # For false content
+    else:
+        if confidence >= 0.9:
+            return "❌"  # Very high confidence false
+        elif confidence >= 0.75:
+            return "👎"  # High confidence false
+        elif confidence >= 0.6:
+            return "🚫"  # Moderate confidence false
+        else:
+            return "❓"  # Low confidence false
+
+def get_emoji_description(confidence, is_authentic):
+    """Get a description for the credibility emoji."""
+    # For authentic content
+    if is_authentic:
+        if confidence >= 0.9:
+            return "Highly Credible"
+        elif confidence >= 0.75:
+            return "Likely Credible"
+        elif confidence >= 0.6:
+            return "Somewhat Credible"
+        else:
+            return "Questionable Credibility"
+    # For false content
+    else:
+        if confidence >= 0.9:
+            return "Highly Misleading"
+        elif confidence >= 0.75:
+            return "Likely Misleading"
+        elif confidence >= 0.6:
+            return "Somewhat Misleading"
+        else:
+            return "Potentially Misleading"
 
 @app.route('/api/models', methods=['GET'])
 def get_models():

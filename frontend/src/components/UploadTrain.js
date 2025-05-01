@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
+import { FiUpload, FiFile, FiCheckCircle } from 'react-icons/fi';
 import apiService from '../services/api';
 
 const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResults }) => {
@@ -37,6 +39,25 @@ const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResul
     fetchModels();
   }, [setTrainedModels]);
   
+  // Handle dropped files from react-dropzone
+  const onDrop = useCallback((acceptedFiles) => {
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      setFile(acceptedFiles[0]);
+      setUploadError('');
+    }
+  }, []);
+
+  // Configure dropzone
+  const { getRootProps, getInputProps, isDragActive, acceptedFiles } = useDropzone({
+    onDrop,
+    accept: {
+      'text/csv': ['.csv'],
+      'application/vnd.ms-excel': ['.csv']
+    },
+    maxFiles: 1
+  });
+
+  // Traditional file input handler (as backup)
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
@@ -152,18 +173,38 @@ const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResul
           
           <form onSubmit={handleUpload}>
             <div className="mb-3">
-              <label htmlFor="file-upload" className="form-label">
-                Dataset File (CSV)
-              </label>
-              <input
-                type="file"
-                className="form-control"
-                id="file-upload"
-                accept=".csv"
-                onChange={handleFileChange}
-                ref={fileInputRef}
-              />
-              <div className="form-text">
+              <label className="form-label">Dataset File (CSV)</label>
+              <div 
+                {...getRootProps()} 
+                className={`dropzone border rounded p-4 text-center ${isDragActive ? 'border-primary bg-light' : 'border-dashed'}`}
+                style={{
+                  borderStyle: 'dashed',
+                  cursor: 'pointer',
+                  transition: 'border .3s ease-in-out, background-color .3s ease-in-out'
+                }}
+              >
+                <input {...getInputProps()} />
+                
+                {isDragActive ? (
+                  <div className="py-4">
+                    <FiUpload className="h3 mb-2 text-primary" />
+                    <p>Drop the CSV file here...</p>
+                  </div>
+                ) : file ? (
+                  <div className="py-2">
+                    <FiCheckCircle className="h3 mb-2 text-success" />
+                    <p className="mb-1">File selected:</p>
+                    <p className="text-primary font-weight-bold">{file.name}</p>
+                  </div>
+                ) : (
+                  <div className="py-4">
+                    <FiUpload className="h3 mb-2" />
+                    <p className="mb-1">Drag & drop a CSV file here, or click to select</p>
+                    <p className="small text-muted mb-0">Supported format: CSV</p>
+                  </div>
+                )}
+              </div>
+              <div className="form-text mt-2">
                 Please ensure your CSV file has columns for text content and labels (0 for fake, 1 for real).
               </div>
             </div>
