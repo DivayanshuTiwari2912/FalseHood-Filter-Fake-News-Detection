@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { 
+  TwitterShareButton, FacebookShareButton, LinkedinShareButton, WhatsappShareButton, EmailShareButton,
+  TwitterIcon, FacebookIcon, LinkedinIcon, WhatsappIcon, EmailIcon 
+} from 'react-share';
 import apiService from '../services/api';
 import ScrapeContent from './ScrapeContent';
 
@@ -11,6 +15,27 @@ const AnalyzeText = ({ trainedModels }) => {
   const [error, setError] = useState('');
   const [availableModels, setAvailableModels] = useState([]);
   const [activeTab, setActiveTab] = useState('manual');
+  const location = useLocation();
+  
+  // Check for shared analysis result in URL
+  useEffect(() => {
+    // Parse shared result from URL if present
+    const params = new URLSearchParams(location.search);
+    const sharedResult = params.get('result');
+    
+    if (sharedResult) {
+      try {
+        const parsedResult = JSON.parse(sharedResult);
+        setResult({
+          ...parsedResult,
+          success: true,
+          label: parsedResult.prediction === 1 ? 'Authentic' : 'False'
+        });
+      } catch (err) {
+        console.error('Error parsing shared result:', err);
+      }
+    }
+  }, [location]);
   
   // Fetch available models on component mount
   useEffect(() => {
@@ -185,14 +210,28 @@ const AnalyzeText = ({ trainedModels }) => {
           <div className="card-body">
             <h3 className="card-title">Analysis Result</h3>
             <div className="alert alert-light">
-              <h4 className={`alert-heading ${result.prediction === 1 ? 'text-success' : 'text-danger'}`}>
-                <strong>
-                  {result.prediction === 1 ? 'REAL NEWS' : 'FAKE NEWS'}
-                </strong>
-              </h4>
+              <div className="d-flex align-items-center">
+                <h4 className={`alert-heading mb-0 ${result.prediction === 1 ? 'text-success' : 'text-danger'}`}>
+                  <strong>
+                    {result.prediction === 1 ? 'AUTHENTIC INFORMATION' : 'FALSE INFORMATION'}
+                  </strong>
+                </h4>
+                {result.emoji && (
+                  <span className="emoji-credibility ms-3" style={{ fontSize: '2rem' }}>
+                    {result.emoji}
+                  </span>
+                )}
+              </div>
+              
+              {result.emoji_description && (
+                <div className="emoji-description mt-2 mb-3">
+                  <span className="badge bg-secondary">{result.emoji_description}</span>
+                </div>
+              )}
+              
               <p>
-                This news article appears to be{' '}
-                <strong>{result.prediction === 1 ? 'genuine' : 'fake'}</strong> with a confidence of{' '}
+                This content appears to be{' '}
+                <strong>{result.prediction === 1 ? 'authentic' : 'false'}</strong> with a confidence of{' '}
                 <span className={getConfidenceClass(result.confidence)}>
                   <strong>{(result.confidence * 100).toFixed(2)}%</strong>
                 </span>
@@ -213,8 +252,8 @@ const AnalyzeText = ({ trainedModels }) => {
               <h5>Explanation</h5>
               <p>
                 {result.prediction === 1
-                  ? 'The selected model has classified this content as real news based on its linguistic patterns, factual consistency, and structural characteristics that are typically associated with genuine news articles.'
-                  : 'The selected model has classified this content as fake news based on detected language patterns, inconsistencies, or other characteristics that are typically associated with misleading or fabricated news articles.'}
+                  ? 'The selected model has classified this content as authentic information based on its linguistic patterns, factual consistency, and structural characteristics that are typically associated with reliable content.'
+                  : 'The selected model has classified this content as false information based on detected language patterns, inconsistencies, or other characteristics that are typically associated with misleading or fabricated content.'}
               </p>
               <p className="text-muted">
                 <small>
@@ -222,6 +261,55 @@ const AnalyzeText = ({ trainedModels }) => {
                   Always cross-check important news with multiple reliable sources.
                 </small>
               </p>
+            </div>
+            
+            <div className="mt-4">
+              <h5>Share this Analysis</h5>
+              <div className="d-flex align-items-center share-buttons">
+                <p className="me-3 mb-0">One-click sharing: </p>
+                <div className="social-share-buttons">
+                  <TwitterShareButton 
+                    url={apiService.generateShareableLink(result)}
+                    title={`I analyzed this content with Falsehood Filter and found it to be ${result.prediction === 1 ? 'authentic' : 'false'} information (${result.emoji_description}) ${result.emoji}`}
+                    className="me-2"
+                  >
+                    <TwitterIcon size={32} round />
+                  </TwitterShareButton>
+                  
+                  <FacebookShareButton 
+                    url={apiService.generateShareableLink(result)}
+                    quote={`I analyzed this content with Falsehood Filter and found it to be ${result.prediction === 1 ? 'authentic' : 'false'} information (${result.emoji_description}) ${result.emoji}`}
+                    className="me-2"
+                  >
+                    <FacebookIcon size={32} round />
+                  </FacebookShareButton>
+                  
+                  <LinkedinShareButton 
+                    url={apiService.generateShareableLink(result)}
+                    title="Falsehood Filter Analysis"
+                    summary={`I analyzed this content with Falsehood Filter and found it to be ${result.prediction === 1 ? 'authentic' : 'false'} information (${result.emoji_description}) ${result.emoji}`}
+                    className="me-2"
+                  >
+                    <LinkedinIcon size={32} round />
+                  </LinkedinShareButton>
+                  
+                  <WhatsappShareButton 
+                    url={apiService.generateShareableLink(result)}
+                    title={`I analyzed this content with Falsehood Filter and found it to be ${result.prediction === 1 ? 'authentic' : 'false'} information (${result.emoji_description}) ${result.emoji}`}
+                    className="me-2"
+                  >
+                    <WhatsappIcon size={32} round />
+                  </WhatsappShareButton>
+                  
+                  <EmailShareButton 
+                    url={apiService.generateShareableLink(result)}
+                    subject="Falsehood Filter Analysis"
+                    body={`I analyzed this content with Falsehood Filter and found it to be ${result.prediction === 1 ? 'authentic' : 'false'} information (${result.emoji_description}) ${result.emoji}\n\n`}
+                  >
+                    <EmailIcon size={32} round />
+                  </EmailShareButton>
+                </div>
+              </div>
             </div>
           </div>
         </div>
