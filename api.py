@@ -236,7 +236,7 @@ def predict():
             'model': model_name,
             'prediction': int(predictions[0]),
             'confidence': float(confidences[0]),
-            'label': 'Real' if predictions[0] == 1 else 'Fake'
+            'label': 'Real' if predictions[0] == 1 else 'False'
         }
         
         return jsonify(result)
@@ -312,7 +312,7 @@ def health_check():
     """API health check endpoint."""
     return jsonify({
         'status': 'healthy',
-        'message': 'Fake News Detection API is running'
+        'message': 'Falsehood Filter API is running'
     })
 
 if __name__ == '__main__':

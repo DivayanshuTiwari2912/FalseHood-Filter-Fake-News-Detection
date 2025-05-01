@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Falsehood Filter is an advanced fake news detection application that leverages state-of-the-art machine learning algorithms to identify misleading or false information. The system analyzes news text and provides predictions on whether the content is likely to be fake or real.
+Falsehood Filter is an advanced false information detection application that leverages state-of-the-art machine learning algorithms to identify misleading or false information. The system analyzes news text and provides predictions on whether the content is likely to be false or real.
 
 ## Features
 
@@ -27,7 +27,7 @@ Key features:
 
 ### 2. Model-Agnostic Meta-Learning (MAML)
 
-MAML is a meta-learning algorithm that trains a model on a variety of learning tasks so that it can quickly adapt to new tasks with minimal data. In our application, it helps the model quickly adapt to different types of fake news content.
+MAML is a meta-learning algorithm that trains a model on a variety of learning tasks so that it can quickly adapt to new tasks with minimal data. In our application, it helps the model quickly adapt to different types of false information content.
 
 Key features:
 - Fast adaptation to new tasks
@@ -56,13 +56,13 @@ Key features:
 
 1. **Data Processing**: Text is preprocessed, tokenized, and transformed into numerical representations
 2. **Feature Extraction**: Each algorithm extracts relevant features for classification
-3. **Model Training**: Models learn patterns from labeled examples (real vs. fake)
+3. **Model Training**: Models learn patterns from labeled examples (real vs. false)
 4. **Prediction**: New text is analyzed by the trained models
 5. **Ensemble Decision**: Results from multiple algorithms are combined for the final verdict
 
 ## Resources
 
-To learn more about fake news detection and the algorithms used in this application, check out these resources:
+To learn more about false information detection and the algorithms used in this application, check out these resources:
 
 - [Transformer Models in NLP](https://huggingface.co/transformers/)
 - [Meta-Learning Introduction](https://lilianweng.github.io/lil-log/2018/11/30/meta-learning.html)
