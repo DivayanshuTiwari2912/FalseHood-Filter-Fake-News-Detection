@@ -115,7 +115,7 @@ if 'current_data' not in st.session_state:
 
 # Sidebar navigation
 st.sidebar.title("Falsehood Filter 🔍")
-page = st.sidebar.selectbox("Navigation", ["Home", "Upload & Train", "Analyze Text", "Results Dashboard", "About"])
+page = st.sidebar.selectbox("Navigation", ["Home", "Upload & Train", "Analyze Text", "Scrape Content", "Results Dashboard", "About"])
 
 # Function to get model instance
 def get_model(model_name):
@@ -133,6 +133,21 @@ def get_model(model_name):
 # Home page
 if page == "Home":
     st.title("Fake News Detection System")
+    
+    # React Migration Notice
+    st.warning("""
+    ## 🚧 Important Notice - Migration in Progress 🚧
+    
+    We're currently migrating this Streamlit application to a modern React frontend with improved features 
+    and performance. Both interfaces will be temporarily available during the transition.
+    
+    * **Streamlit UI**: Available now at port 5000
+    * **React UI (in development)**: Coming soon
+    * **API Backend**: Running on port 5001
+    
+    The API server and trained models will remain fully compatible with both interfaces.
+    """)
+    
     st.write("""
     ### Welcome to the Falsehood Filter
     
@@ -386,6 +401,134 @@ elif page == "Analyze Text":
                 - Comparison with known fake and real news samples
                 - Structural elements common in fake vs. real news
                 """)
+
+# Scrape Content page
+elif page == "Scrape Content":
+    st.title("Scrape Website Content")
+    
+    st.write("""
+    ### Extract News Text from Websites
+    
+    This tool allows you to automatically extract the main content from news websites and analyze it for credibility.
+    Enter the URL of a news article below to scrape its content.
+    """)
+    
+    # URL input
+    url = st.text_input("Enter website URL:", placeholder="https://example.com/news/article")
+    
+    # Scrape button
+    if st.button("Scrape Content"):
+        if not url:
+            st.warning("Please enter a URL to scrape.")
+        else:
+            try:
+                with st.spinner("Scraping website content..."):
+                    # Call API to scrape the website
+                    import requests
+                    import json
+                    
+                    response = requests.post(
+                        "http://localhost:5001/api/scrape",
+                        json={"url": url},
+                        headers={"Content-Type": "application/json"}
+                    )
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        
+                        # Display scraped content
+                        st.success(f"Successfully scraped content from {url}")
+                        st.subheader("Extracted Content")
+                        
+                        # Show extracted text
+                        extracted_text = result.get("text", "")
+                        st.text_area("Extracted Text", extracted_text, height=300, disabled=True)
+                        
+                        # Show stats
+                        st.write(f"Content length: {result.get('length', 0)} characters")
+                        
+                        # Option to analyze the scraped content
+                        if st.session_state.trained:
+                            if st.button("Analyze Scraped Content"):
+                                # Get all available trained models
+                                available_models = [model for model in st.session_state.models if st.session_state.models[model] is not None]
+                                
+                                if not available_models:
+                                    st.warning("No trained models available. Please train models first.")
+                                else:
+                                    # Process text
+                                    processed_text = preprocess_text(extracted_text)
+                                    
+                                    # Display results
+                                    st.subheader("Analysis Results")
+                                    
+                                    results = {}
+                                    
+                                    # Create columns for each model
+                                    cols = st.columns(min(len(available_models), 4))  # Limit to 4 columns max
+                                    
+                                    for i, model_name in enumerate(available_models):
+                                        model = st.session_state.models[model_name]['model']
+                                        prediction, confidence = model.predict([processed_text])
+                                        
+                                        # Store results
+                                        results[model_name] = {
+                                            'prediction': prediction[0],
+                                            'confidence': confidence[0]
+                                        }
+                                        
+                                        # Display in column
+                                        with cols[i % len(cols)]:
+                                            st.write(f"### {model_name}")
+                                            if prediction[0] == 1:
+                                                st.success("✅ Real News")
+                                            else:
+                                                st.error("❌ Fake News")
+                                            
+                                            st.write(f"Confidence: {confidence[0]:.2f}")
+                                            st.progress(confidence[0])
+                                    
+                                    # Overall verdict (majority voting)
+                                    st.subheader("Overall Verdict")
+                                    predictions = [results[model]['prediction'] for model in results]
+                                    average_confidence = np.mean([results[model]['confidence'] for model in results])
+                                    
+                                    if sum(predictions) > len(predictions) / 2:
+                                        st.success(f"✅ Real News (Average confidence: {average_confidence:.2f})")
+                                    else:
+                                        st.error(f"❌ Fake News (Average confidence: {average_confidence:.2f})")
+                                    
+                                    # Add to analysis history
+                                    st.session_state.analysis_history.append({
+                                        'text': f"[Scraped from {url}] {extracted_text[:100]}...",
+                                        'timestamp': pd.Timestamp.now(),
+                                        'results': results,
+                                        'overall_verdict': sum(predictions) > len(predictions) / 2,
+                                        'average_confidence': average_confidence,
+                                        'url': url
+                                    })
+                        else:
+                            st.warning("⚠️ To analyze this content, please train models first in the 'Upload & Train' section.")
+                    else:
+                        error_msg = "Failed to scrape content"
+                        try:
+                            error_details = response.json().get("error", "Unknown error")
+                            error_msg = f"{error_msg}: {error_details}"
+                        except:
+                            pass
+                        st.error(error_msg)
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+    
+    # Add tips for better scraping
+    with st.expander("Tips for Website Scraping"):
+        st.write("""
+        - Make sure the URL is valid and accessible
+        - Some websites may block scraping attempts
+        - For best results, use URLs from major news sources
+        - The tool extracts the main article content, ignoring navigation, ads, etc.
+        - You may need to manually clean the text if the automatic extraction isn't perfect
+        """)
 
 # Results Dashboard page
 elif page == "Results Dashboard":
