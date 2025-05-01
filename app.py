@@ -86,7 +86,7 @@ except ImportError as e:
 
 # Set page configuration
 st.set_page_config(
-    page_title="Falsehood Filter - Fake News Detection",
+    page_title="Falsehood Filter",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -132,7 +132,7 @@ def get_model(model_name):
 
 # Home page
 if page == "Home":
-    st.title("Fake News Detection System")
+    st.title("Falsehood Filter System")
     
     # React Migration Notice
     st.warning("""
@@ -151,7 +151,7 @@ if page == "Home":
     st.write("""
     ### Welcome to the Falsehood Filter
     
-    This application helps detect fake news using advanced machine learning algorithms. You can:
+    This application helps detect false information using advanced machine learning algorithms. You can:
     - Upload your dataset and train the models
     - Analyze individual news articles
     - View model performance and comparison
@@ -364,7 +364,7 @@ elif page == "Analyze Text":
                         if prediction[0] == 1:
                             st.success("✅ Real News")
                         else:
-                            st.error("❌ Fake News")
+                            st.error("❌ False Information")
                         
                         st.write(f"Confidence: {confidence[0]:.2f}")
                         
@@ -379,7 +379,7 @@ elif page == "Analyze Text":
                 if sum(predictions) > len(predictions) / 2:
                     st.success(f"✅ Real News (Average confidence: {average_confidence:.2f})")
                 else:
-                    st.error(f"❌ Fake News (Average confidence: {average_confidence:.2f})")
+                    st.error(f"❌ False Information (Average confidence: {average_confidence:.2f})")
                 
                 # Add to analysis history
                 st.session_state.analysis_history.append({
@@ -483,7 +483,7 @@ elif page == "Scrape Content":
                                             if prediction[0] == 1:
                                                 st.success("✅ Real News")
                                             else:
-                                                st.error("❌ Fake News")
+                                                st.error("❌ False Information")
                                             
                                             st.write(f"Confidence: {confidence[0]:.2f}")
                                             st.progress(confidence[0])
@@ -496,7 +496,7 @@ elif page == "Scrape Content":
                                     if sum(predictions) > len(predictions) / 2:
                                         st.success(f"✅ Real News (Average confidence: {average_confidence:.2f})")
                                     else:
-                                        st.error(f"❌ Fake News (Average confidence: {average_confidence:.2f})")
+                                        st.error(f"❌ False Information (Average confidence: {average_confidence:.2f})")
                                     
                                     # Add to analysis history
                                     st.session_state.analysis_history.append({
@@ -637,7 +637,7 @@ elif page == "Results Dashboard":
                     if analysis['overall_verdict']:
                         st.success(f"✅ Real News (Confidence: {analysis['average_confidence']:.2f})")
                     else:
-                        st.error(f"❌ Fake News (Confidence: {analysis['average_confidence']:.2f})")
+                        st.error(f"❌ False Information (Confidence: {analysis['average_confidence']:.2f})")
                     
                     st.write("**Individual Model Results:**")
                     for model, result in analysis['results'].items():
