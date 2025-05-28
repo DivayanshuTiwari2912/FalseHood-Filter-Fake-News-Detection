@@ -167,6 +167,14 @@ function App() {
         <footer className="bg-light p-3 text-center">
           <div className="container">
             <span className="text-muted">Falsehood Filter System © {new Date().getFullYear()}</span>
+            <br />
+<span className="text-muted">Created By</span>
+<br />
+<span className='text-muted'>Divayanshu Tiwari</span>
+<br />
+<span className='text-muted'>Viswanthkumar</span>
+<br />
+<span className='text-muted'>Moneesh Kumaaran</span>
           </div>
         </footer>
         

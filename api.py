@@ -10,6 +10,8 @@ import nltk
 
 # Ensure NLTK resources are downloaded
 try:
+
+    
     nltk.download('stopwords', quiet=True)
     nltk.download('wordnet', quiet=True)
     nltk.download('punkt', quiet=True)
@@ -144,38 +146,36 @@ def upload_dataset():
 
 @app.route('/api/train', methods=['POST'])
 def train():
-    """Train a model on the uploaded dataset."""
+    """Train one or more models on the uploaded dataset."""
     global models, X_train, y_train
-    
     try:
         # Check if dataset is uploaded
         if X_train is None or y_train is None:
             return jsonify({'error': 'No dataset uploaded. Please upload a dataset first.'}), 400
-            
-        # Get parameters from request
+
         data = request.json
-        model_name = data.get('model', 'deberta')
+        # Support both single and multiple model training
+        model_names = data.get('models')
+        if model_names is None:
+            # Fallback to single model for backward compatibility
+            model_names = [data.get('model', 'deberta')]
         epochs = int(data.get('epochs', 3))
         batch_size = int(data.get('batch_size', 32))
-        
-        # Initialize model
-        ModelClass = get_model(model_name)
-        model = ModelClass()
-        
-        # Train model
-        model = train_model(model, X_train, y_train, epochs=epochs, batch_size=batch_size)
-        
-        # Store trained model
-        models[model_name] = model
-        
-        return jsonify({
-            'success': True,
-            'model': model_name,
-            'message': f'Model {model_name} trained successfully'
-        })
-        
+
+        results = []
+        for model_name in model_names:
+            try:
+                ModelClass = get_model(model_name)
+                model = ModelClass()
+                model = train_model(model, X_train, y_train, epochs=epochs, batch_size=batch_size)
+                models[model_name] = model
+                results.append({'model': model_name, 'success': True, 'message': f'Model {model_name} trained successfully'})
+            except Exception as e:
+                results.append({'model': model_name, 'success': False, 'error': str(e)})
+
+        return jsonify({'results': results, 'success': all(r['success'] for r in results)})
     except Exception as e:
-        return jsonify({'error': f'Error training model: {str(e)}'}), 500
+        return jsonify({'error': f'Error training model(s): {str(e)}'}), 500
 
 @app.route('/api/evaluate', methods=['POST'])
 def evaluate():

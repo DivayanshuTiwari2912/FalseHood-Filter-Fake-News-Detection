@@ -12,7 +12,7 @@ const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResul
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   
-  const [selectedModel, setSelectedModel] = useState('deberta');
+  const [selectedModels, setSelectedModels] = useState([]);
   const [epochs, setEpochs] = useState(3);
   const [batchSize, setBatchSize] = useState(32);
   const [isTraining, setIsTraining] = useState(false);
@@ -105,33 +105,39 @@ const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResul
       setTrainingError('Please upload a dataset first.');
       return;
     }
-    
+    if (!selectedModels.length) {
+      setTrainingError('Please select at least one model to train.');
+      return;
+    }
+
     setIsTraining(true);
     setTrainingError('');
     setTrainingSuccess('');
-    
-    try {
-      const response = await apiService.trainModel(selectedModel, epochs, batchSize);
-      
-      // Update trained models list
-      const modelsResponse = await apiService.getAvailableModels();
-      setTrainedModels(modelsResponse.data.trained_models || []);
-      
-      setIsTraining(false);
-      setTrainingSuccess(`Model ${selectedModel} trained successfully!`);
-      
-      // Automatically evaluate the model
-      handleEvaluate(selectedModel);
-    } catch (err) {
-      setIsTraining(false);
-      console.error('Error training model:', err);
-      
-      if (err.response && err.response.data && err.response.data.error) {
-        setTrainingError(err.response.data.error);
-      } else {
-        setTrainingError('Error training model. Please try again.');
+
+    let successMessages = [];
+    let errorMessages = [];
+
+    for (const model of selectedModels) {
+      try {
+        const response = await apiService.trainModel(model, epochs, batchSize);
+        successMessages.push(`Model ${model} trained successfully!`);
+        // Update trained models list after each
+        const modelsResponse = await apiService.getAvailableModels();
+        setTrainedModels(modelsResponse.data.trained_models || []);
+        // Automatically evaluate the model
+        await handleEvaluate(model);
+      } catch (err) {
+        if (err.response && err.response.data && err.response.data.error) {
+          errorMessages.push(err.response.data.error);
+        } else {
+          errorMessages.push(`Error training model ${model}. Please try again.`);
+        }
       }
     }
+
+    setIsTraining(false);
+    setTrainingSuccess(successMessages.join(' '));
+    setTrainingError(errorMessages.join(' '));
   };
   
   const handleEvaluate = async (modelName) => {
@@ -301,13 +307,17 @@ const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResul
           <form onSubmit={handleTrain}>
             <div className="mb-3">
               <label htmlFor="model-select" className="form-label">
-                Select Model
+                Select Models
               </label>
               <select
                 id="model-select"
                 className="form-select"
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
+                multiple
+                value={selectedModels}
+                onChange={(e) => {
+                  const options = Array.from(e.target.selectedOptions, option => option.value);
+                  setSelectedModels(options);
+                }}
               >
                 {Object.entries(availableModels).map(([key, name]) => (
                   <option key={key} value={key}>
@@ -315,6 +325,7 @@ const UploadTrain = ({ dataset, setDataset, setTrainedModels, setEvaluationResul
                   </option>
                 ))}
               </select>
+              <div className="form-text">Hold Ctrl (Windows) or Cmd (Mac) to select multiple models.</div>
             </div>
             
             <div className="row">

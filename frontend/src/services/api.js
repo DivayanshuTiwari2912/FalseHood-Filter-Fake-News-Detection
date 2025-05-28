@@ -43,6 +43,15 @@ const apiService = {
     });
   },
   
+  // Train multiple models (for future extensibility if backend supports batch)
+  trainMultipleModels: (models, epochs = 3, batchSize = 32) => {
+    return apiClient.post('/train', {
+      models: models,
+      epochs: epochs,
+      batch_size: batchSize,
+    });
+  },
+  
   evaluateModel: (modelName) => {
     return apiClient.post('/evaluate', {
       model: modelName,
